@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Умный Учебник 2.0</title>
+    <style>
+        :root {
+            --bg-color: #F2F2F7;
+            --card-bg: #FFFFFF;
+            --text-primary: #000000;
+            --text-secondary: #8E8E93;
+            --accent: #007AFF;
+            --success: #34C759;
+            --danger: #FF3B30;
+            --warning: #FF9500;
+            --shadow: 0 4px 12px rgba(0,0,0,0.08);
+            --radius: 16px;
+            --input-bg: #F5F5F7;
+        }
+
+        body.dark {
+            --bg-color: #000000;
+            --card-bg: #1C1C1E;
+            --text-primary: #FFFFFF;
+            --text-secondary: #98989D;
+            --accent: #0A84FF;
+            --input-bg: #2C2C2E;
+            --shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: var(--bg-color); color: var(--text-primary); margin: 0; padding-bottom: 80px; transition: background 0.3s, color 0.3s; }
+        
+        /* Navigation / Tabs */
+        .tabs { 
+            display: flex; justify-content: space-around; 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            padding: 12px 0; border-top: 1px solid rgba(0,0,0,0.1); 
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; 
+        }
+        .dark .tabs { background: rgba(28, 28, 30, 0.85); border-top: 1px solid rgba(255,255,255,0.1); }
+        
+        .tab { display: flex; flex-direction: column; align-items: center; cursor: pointer; color: var(--text-secondary); font-size: 10px; font-weight: 500; transition: color 0.2s; }
+        .tab svg { width: 24px; height: 24px; margin-bottom: 4px; fill: currentColor; }
+        .tab.active { color: var(--accent); }
+
+        /* Main Container */
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .section { display: none; animation: fadeIn 0.3s ease; }
+        .section.active { display: block; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Generic UI Elements */
+        h1, h2 { margin: 0 0 15px 0; font-weight: 700; }
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        button { border: none; border-radius: 10px; padding: 10px 20px; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.1s, opacity 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+        button:active { transform: scale(0.96); }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-ghost { background: transparent; color: var(--accent); padding: 8px; }
+        .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+
+        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; border: none; border-radius: 12px; background: var(--input-bg); color: var(--text-primary); font-size: 16px; box-sizing: border-box; font-family: inherit; transition: box-shadow 0.2s; }
+        input:focus, textarea:focus { outline: none; box-shadow: 0 0 0 2px var(--accent); }
+
+        /* --- TASKS STYLES --- */
+        .add-task-panel {
+            background: var(--card-bg); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px;
+            display: none; /* Hidden by default */
+        }
+        .add-task-panel.open { display: block; }
+
+        .feature-toggles { display: flex; gap: 10px; margin: 10px 0; }
+        .toggle-btn { flex: 1; background: var(--input-bg); color: var(--text-secondary); padding: 10px; border-radius: 8px; font-size: 13px; text-align: center; cursor: pointer; border: 1px solid transparent; }
+        .toggle-btn.active { background: var(--card-bg); border-color: var(--accent); color: var(--accent); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+        #task-list { list-style: none; padding: 0; margin: 0; }
+        .task-item { 
+            background: var(--card-bg); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); 
+            display: flex; flex-direction: column; gap: 10px; position: relative;
+        }
+        .task-item.done .task-text { text-decoration: line-through; color: var(--text-secondary); }
+        .task-header { display: flex; align-items: flex-start; gap: 12px; }
+        .checkbox { 
+            width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--text-secondary); 
+            display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; margin-top: 2px;
+        }
+        .task-item.done .checkbox { background: var(--success); border-color: var(--success); }
+        .checkbox::after { content: '✓'; color: white; font-size: 14px; opacity: 0; }
+        .task-item.done .checkbox::after { opacity: 1; }
+        
+        .task-content { flex-grow: 1; }
+        .task-text { font-size: 17px; line-height: 1.4; margin-bottom: 4px; display: block; }
+        .task-meta { font-size: 12px; color: var(--text-secondary); display: flex; gap: 10px; align-items: center; }
+        
+        .progress-container { margin-top: 8px; background: var(--input-bg); height: 8px; border-radius: 4px; overflow: hidden; position: relative; }
+        .progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+        .progress-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; font-size: 13px; color: var(--text-secondary); }
+
+        /* --- OTHER SECTIONS --- */
+        .math-render { padding: 20px; background: var(--input-bg); border-radius: var(--radius); margin: 15px 0; min-height: 100px; text-align: center; }
+        
+        #canvas { border: 1px solid var(--text-secondary); background: white; width: 100%; height: 400px; border-radius: var(--radius); touch-action: none; cursor: crosshair; }
+        .dark #canvas { filter: invert(0.9); } /* Quick hack for dark mode canvas */
+
+        .card-container { perspective: 1000px; min-height: 250px; margin-top: 20px; }
+        .flashcard { 
+            background: var(--card-bg); padding: 30px; border-radius: var(--radius); box-shadow: var(--shadow); 
+            text-align: center; min-height: 200px; display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        
+        .rating-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div id="tasks-section" class="section active">
+            <div class="header-row">
+                <h1>Мои Задачи</h1>
+                <button class="btn-ghost" onclick="toggleTheme()">
+                    <svg viewBox="0 0 24 24" width="24" height="24"><path fill="currentColor" d="M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10zm1-17.93c3.94.49 7 3.85 7 7.93 0 4.41-3.59 8-8 8V4.07z"/></svg>
+                </button>
+            </div>
+
+            <button class="btn-primary" style="width:100%; margin-bottom: 15px;" onclick="toggleAddPanel()">
+                <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                Новая задача
+            </button>
+
+            <div id="add-panel" class="add-task-panel">
+                <input id="task-input" placeholder="Что нужно сделать?">
+                
+                <div class="feature-toggles">
+                    <div class="toggle-btn" id="toggle-notify" onclick="this.classList.toggle('active'); document.getElementById('notify-opts').style.display = this.classList.contains('active') ? 'block' : 'none'">
+                        🔔 Напоминание
+                    </div>
+                    <div class="toggle-btn" id="toggle-progress" onclick="this.classList.toggle('active'); document.getElementById('progress-opts').style.display = this.classList.contains('active') ? 'flex' : 'none'">
+                        📊 Прогресс
+                    </div>
+                </div>
+
+                <div id="notify-opts" style="display:none;">
+                    <label style="font-size:12px; color:var(--text-secondary);">Время уведомления:</label>
+                    <input type="datetime-local" id="task-date">
+                </div>
+
+                <div id="progress-opts" style="display:none; gap:10px;">
+                    <input type="number" id="prog-current" placeholder="Сейчас (0)" style="flex:1">
+                    <input type="number" id="prog-total" placeholder="Всего (100)" style="flex:1">
+                </div>
+
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button class="btn-primary" onclick="addTask()" style="flex:1">Создать</button>
+                    <button class="btn-ghost" onclick="toggleAddPanel()">Отмена</button>
+                </div>
+            </div>
+
+            <ul id="task-list"></ul>
+        </div>
+
+        <div id="draw-section" class="section">
+            <div class="header-row">
+                <h1>Доска & Графики</h1>
+                <button class="btn-warning btn-sm" onclick="clearCanvas()">Очистить</button>
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-bottom:10px; overflow-x:auto; padding-bottom:5px;">
+                <input type="color" id="color-picker" value="#000000" style="width:50px; padding:2px; height:40px;">
+                <select id="line-width" style="width:auto;">
+                    <option value="2">Тонкая</option>
+                    <option value="5">Средняя</option>
+                    <option value="10">Толстая</option>
+                </select>
+                <button class="btn-ghost" onclick="undo()">↶</button>
+            </div>
+
+            <canvas id="canvas"></canvas>
+
+            <h2 style="margin-top:20px;">Вычисления</h2>
+            <div style="display:flex; gap:10px;">
+                <input id="math-input" placeholder="Пример: sin(x), sqrt(16), 2+2">
+                <button class="btn-primary" onclick="calcMath()">Go</button>
+            </div>
+            <div class="math-render" id="math-result">Результат появится здесь</div>
+            <canvas id="graph-canvas" style="width:100%; height:250px; background:white; border-radius:16px; display:none;"></canvas>
+        </div>
+
+        <div id="diary-section" class="section">
+            <div class="header-row">
+                <h1>Дневник</h1>
+                <button class="btn-success btn-sm" onclick="saveDiary()">Сохранить</button>
+            </div>
+            <textarea id="diary-text" style="height: 60vh; font-family: monospace; line-height: 1.6;" placeholder="Ваши мысли... Поддерживается Markdown."></textarea>
+        </div>
+
+        <div id="memory-section" class="section">
+            <h1>Интервальное повторение</h1>
+            <div style="background:var(--input-bg); padding:15px; border-radius:12px; text-align:center; margin-bottom:20px;">
+                <div style="font-size:24px; font-weight:bold; color:var(--accent);" id="due-count">0</div>
+                <div style="font-size:12px; color:var(--text-secondary);">Карточек к повторению</div>
+            </div>
+
+            <div id="setup-view">
+                <textarea id="cards-json" rows="4" placeholder='[{"front": "Вопрос", "back": "Ответ"}]'></textarea>
+                <button class="btn-primary" style="width:100%" onclick="importCards()">Импортировать JSON</button>
+                <button class="btn-success" style="width:100%; margin-top:10px; padding:15px;" onclick="startReview()">Начать обучение</button>
+            </div>
+
+            <div id="review-view" style="display:none;">
+                <div class="flashcard">
+                    <div id="card-content" class="math-render" style="background:transparent; margin:0; width:100%;"></div>
+                </div>
+                
+                <button id="show-answer-btn" class="btn-primary" style="width:100%; margin-top:20px; padding:15px;" onclick="showAnswer()">Показать ответ</button>
+                
+                <div id="rating-area" style="display:none;">
+                    <div class="rating-grid">
+                        <button class="btn-danger" onclick="rateCard(0)">Забыл</button>
+                        <button class="btn-warning" onclick="rateCard(1)">Тяжело</button>
+                        <button class="btn-primary" onclick="rateCard(3)">Норм</button>
+                        <button class="btn-success" onclick="rateCard(4)">Легко</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('tasks-section', this)">
+            <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            Задачи
+        </div>
+        <div class="tab" onclick="switchTab('draw-section', this)">
+            <svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+            Доска
+        </div>
+        <div class="tab" onclick="switchTab('diary-section', this)">
+            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            Дневник
+        </div>
+        <div class="tab" onclick="switchTab('memory-section', this)">
+            <svg viewBox="0 0 24 24"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-6 2.5c1.93 0 3.5 1.57 3.5 3.5S13.93 11.5 12 11.5 8.5 9.93 8.5 8 10.07 4.5 12 4.5zM12 20c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z"/></svg>
+            Память
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.0.0/math.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        window.MathJax = { tex: { inlineMath: [['\\(', '\\)']], displayMath: [['$$', '$$']] }, startup: { ready: () => MathJax.startup.defaultReady() } };
+    </script>
+    <script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+
+    <script>
+        // === STATE ===
+        let tasks = JSON.parse(localStorage.getItem('tasks_v2') || '[]');
+        let cards = JSON.parse(localStorage.getItem('cards_v2') || '[]');
+        let theme = localStorage.getItem('theme') || 'light';
+        let currentCard = null;
+
+        // === INIT ===
+        if (theme === 'dark') document.body.classList.add('dark');
+        
+        // Request Notifications Permission on Load
+        if ("Notification" in window && Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+
+        // Notification Checker (Every 30s)
+        setInterval(() => {
+            const now = new Date();
+            let changed = false;
+            tasks.forEach(t => {
+                if (t.notifyTime && !t.notified) {
+                    const taskTime = new Date(t.notifyTime);
+                    if (taskTime <= now) {
+                        new Notification("Напоминание задачи", { body: t.text, icon: '' });
+                        t.notified = true;
+                        changed = true;
+                    }
+                }
+            });
+            if(changed) saveTasks();
+        }, 30000);
+
+        // === UI FUNCTIONS ===
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+        }
+
+        function switchTab(id, tabEl) {
+            document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            tabEl.classList.add('active');
+            if (id === 'draw-section') resizeCanvas();
+            if (id === 'memory-section') updateCardStats();
+        }
+
+        function toggleAddPanel() {
+            document.getElementById('add-panel').classList.toggle('open');
+        }
+
+        // === TASK LOGIC ===
+        function saveTasks() {
+            localStorage.setItem('tasks_v2', JSON.stringify(tasks));
+            renderTasks();
+        }
+
+        function addTask() {
+            const text = document.getElementById('task-input').value.trim();
+            if (!text) return alert('Введите текст задачи');
+
+            const useNotify = document.getElementById('toggle-notify').classList.contains('active');
+            const useProgress = document.getElementById('toggle-progress').classList.contains('active');
+            
+            let notifyTime = null;
+            if (useNotify) {
+                const val = document.getElementById('task-date').value;
+                if (val) notifyTime = val;
+            }
+
+            let progress = null;
+            if (useProgress) {
+                const cur = parseInt(document.getElementById('prog-current').value) || 0;
+                const tot = parseInt(document.getElementById('prog-total').value) || 100;
+                progress = { current: cur, total: tot };
+            }
+
+            tasks.push({
+                id: Date.now(),
+                text,
+                done: false,
+                notifyTime,
+                notified: false,
+                progress
+            });
+
+            // Reset Form
+            document.getElementById('task-input').value = '';
+            document.getElementById('task-date').value = '';
+            document.getElementById('prog-current').value = '';
+            toggleAddPanel();
+            saveTasks();
+        }
+
+        function renderTasks() {
+            const list = document.getElementById('task-list');
+            list.innerHTML = '';
+            
+            // Sort: Not done first
+            tasks.sort((a,b) => a.done - b.done);
+
+            tasks.forEach((t, index) => {
+                const li = document.createElement('li');
+                li.className = `task-item ${t.done ? 'done' : ''}`;
+                
+                // Date formatting
+                let dateBadge = '';
+                if (t.notifyTime) {
+                    const d = new Date(t.notifyTime);
+                    const formatted = d.toLocaleString('ru-RU', { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+                    dateBadge = `<span style="background:var(--input-bg); padding:2px 6px; border-radius:4px;">⏰ ${formatted}</span>`;
+                }
+
+                // Progress HTML
+                let progressHtml = '';
+                if (t.progress) {
+                    const pct = Math.min(100, Math.round((t.progress.current / t.progress.total) * 100));
+                    progressHtml = `
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: ${pct}%"></div>
+                        </div>
+                        <div class="progress-controls">
+                            <span>${t.progress.current} / ${t.progress.total} (${pct}%)</span>
+                            <div style="display:flex; gap:5px;">
+                                <button class="btn-primary btn-sm" onclick="changeProgress(${index}, -1)">-</button>
+                                <button class="btn-primary btn-sm" onclick="changeProgress(${index}, 1)">+</button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                li.innerHTML = `
+                    <div class="task-header">
+                        <div class="checkbox" onclick="toggleDone(${index})"></div>
+                        <div class="task-content">
+                            <span class="task-text">${t.text}</span>
+                            <div class="task-meta">
+                                ${dateBadge}
+                                <span style="color:var(--danger); cursor:pointer;" onclick="deleteTask(${index})">Удалить</span>
+                            </div>
+                            ${progressHtml}
+                        </div>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        function toggleDone(i) { tasks[i].done = !tasks[i].done; saveTasks(); }
+        function deleteTask(i) { if(confirm('Удалить?')) { tasks.splice(i,1); saveTasks(); } }
+        function changeProgress(i, delta) {
+            if(tasks[i].progress) {
+                tasks[i].progress.current += delta;
+                if (tasks[i].progress.current < 0) tasks[i].progress.current = 0;
+                saveTasks();
+            }
+        }
+
+        // === CANVAS LOGIC ===
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let drawing = false, paths = [], redoPaths = [];
+        
+        function resizeCanvas() { 
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width - 40; // padding adjustment
+            canvas.height = 400; 
+            redraw(); 
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        canvas.addEventListener('pointerdown', e => { 
+            drawing = true; 
+            const p = getPos(e); 
+            ctx.beginPath(); ctx.moveTo(p.x, p.y); 
+            paths.push([{x:p.x, y:p.y, color: document.getElementById('color-picker').value, width: document.getElementById('line-width').value}]); 
+            redoPaths = [];
+        });
+        canvas.addEventListener('pointermove', e => {
+            if(!drawing) return;
+            const p = getPos(e);
+            const currentPath = paths[paths.length-1];
+            const style = currentPath[0];
+            ctx.lineTo(p.x, p.y);
+            ctx.strokeStyle = style.color;
+            ctx.lineWidth = style.width;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+            currentPath.push({x:p.x, y:p.y});
+        });
+        canvas.addEventListener('pointerup', () => drawing = false);
+
+        function getPos(e) { const r = canvas.getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; }
+        function redraw() { 
+            ctx.clearRect(0,0,canvas.width,canvas.height); 
+            paths.forEach(p => {
+                if(p.length < 2) return;
+                ctx.beginPath(); 
+                ctx.strokeStyle = p[0].color; ctx.lineWidth = p[0].width; ctx.lineCap='round';
+                ctx.moveTo(p[0].x, p[0].y);
+                for(let i=1; i<p.length; i++) ctx.lineTo(p[i].x, p[i].y);
+                ctx.stroke();
+            });
+        }
+        function undo() { if(paths.length) { redoPaths.push(paths.pop()); redraw(); } }
+        function clearCanvas() { paths=[]; redraw(); }
+
+        // === MATH ===
+        let myChart = null;
+        function calcMath() {
+            const input = document.getElementById('math-input').value;
+            const resDiv = document.getElementById('math-result');
+            const graphCv = document.getElementById('graph-canvas');
+            
+            try {
+                // Try plotting
+                const expr = math.compile(input);
+                const xValues = math.range(-10, 10, 0.5).toArray();
+                const yValues = xValues.map(x => expr.evaluate({x: x}));
+                
+                // If it evaluated to numbers, draw graph
+                if (typeof yValues[0] === 'number') {
+                    resDiv.innerHTML = `$$y = ${math.parse(input).toTex()}$$`;
+                    graphCv.style.display = 'block';
+                    if(myChart) myChart.destroy();
+                    myChart = new Chart(graphCv, {
+                        type: 'line',
+                        data: {
+                            labels: xValues,
+                            datasets: [{ label: 'f(x)', data: yValues, borderColor: '#007AFF', fill: false }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false }
+                    });
+                } else {
+                    // Just calc
+                    const res = math.evaluate(input);
+                    resDiv.innerHTML = `$$${math.parse(input).toTex()} = ${res}$$`;
+                    graphCv.style.display = 'none';
+                }
+            } catch (e) {
+                resDiv.innerText = "Ошибка: " + e.message;
+            }
+            MathJax.typesetPromise([resDiv]);
+        }
+
+        // === DIARY ===
+        const diary = document.getElementById('diary-text');
+        diary.value = localStorage.getItem('diary') || '';
+        function saveDiary() { localStorage.setItem('diary', diary.value); alert('Сохранено'); }
+
+        // === MEMORY (SRS) ===
+        function updateCardStats() {
+            const today = new Date().toISOString().slice(0,10);
+            const due = cards.filter(c => c.due <= today).length;
+            document.getElementById('due-count').innerText = due;
+        }
+
+        function importCards() {
+            try {
+                const raw = JSON.parse(document.getElementById('cards-json').value);
+                raw.forEach(c => {
+                    cards.push({
+                        front: c.front, back: c.back,
+                        rep: 0, interval: 1, ease: 2.5,
+                        due: new Date().toISOString().slice(0,10)
+                    });
+                });
+                localStorage.setItem('cards_v2', JSON.stringify(cards));
+                updateCardStats();
+                document.getElementById('cards-json').value = '';
+                alert('Добавлено ' + raw.length + ' карточек');
+            } catch(e) { alert('Ошибка JSON'); }
+        }
+
+        function startReview() {
+            const today = new Date().toISOString().slice(0,10);
+            const dueList = cards.filter(c => c.due <= today);
+            if(dueList.length === 0) return alert('На сегодня все!');
+            
+            document.getElementById('setup-view').style.display = 'none';
+            document.getElementById('review-view').style.display = 'block';
+            
+            currentCard = dueList[Math.floor(Math.random() * dueList.length)];
+            showFront();
+        }
+
+        function showFront() {
+            document.getElementById('card-content').innerHTML = marked.parse(currentCard.front);
+            document.getElementById('show-answer-btn').style.display = 'block';
+            document.getElementById('rating-area').style.display = 'none';
+            MathJax.typesetPromise();
+        }
+
+        function showAnswer() {
+            document.getElementById('card-content').innerHTML += '<hr>' + marked.parse(currentCard.back);
+            document.getElementById('show-answer-btn').style.display = 'none';
+            document.getElementById('rating-area').style.display = 'block';
+            MathJax.typesetPromise();
+        }
+
+        function rateCard(quality) {
+            // SuperMemo-2 Algorithm simplified
+            if (quality < 3) {
+                currentCard.rep = 0;
+                currentCard.interval = 1;
+            } else {
+                if (currentCard.rep === 0) currentCard.interval = 1;
+                else if (currentCard.rep === 1) currentCard.interval = 6;
+                else currentCard.interval = Math.round(currentCard.interval * currentCard.ease);
+                currentCard.rep++;
+            }
+            currentCard.ease = Math.max(1.3, currentCard.ease + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)));
+            
+            const d = new Date(); d.setDate(d.getDate() + currentCard.interval);
+            currentCard.due = d.toISOString().slice(0,10);
+            
+            localStorage.setItem('cards_v2', JSON.stringify(cards));
+            startReview(); // Next card
+        }
+
+        // Init
+        renderTasks();
+    </script>
+</body>
+</html>
