@@ -45,7 +45,7 @@
         }
 
         /* --- LAYOUT --- */
-        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .container { max-width: 1500px; margin: 0 auto; padding: 20px; }
         .section { display: none; animation: fadeIn 0.2s ease-out; }
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -172,6 +172,302 @@
         .rating-btns { display: flex; gap: 10px; margin-top: 20px; transition: opacity 0.3s; opacity: 0; }
         .rating-btns.visible { opacity: 1; }
         .math-render p { margin: 0; } /* Fix for marked.js adding <p> */
+/* Контейнер для стопки */
+.stack-container {
+    position: relative;
+    height: 70vh;
+    width: 100%;
+    margin-top: 50px;
+}
+
+/* Сама карточка доски */
+.board-card {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-card); /* Берем цвет из твоей темы */
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transition: transform 0.3s ease, z-index 0s;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Статичный "козырек" для наведения */
+.board-handle {
+    height: 30px;
+    background: var(--bg-input);
+    border-radius: var(--radius) var(--radius) 0 0;
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+}
+
+/* Логика стопки (козырьки торчат сверху) */
+.board-card:nth-last-child(1) { transform: translateY(0); z-index: 100; }
+.board-card:nth-last-child(2) { transform: translateY(-40px); z-index: 90; }
+.board-card:nth-last-child(3) { transform: translateY(-80px); z-index: 80; }
+.board-card:nth-last-child(n+4) { transform: translateY(-120px); z-index: 70; }
+
+/* При наведении на козырек — доска чуть приподнимается, но не улетает */
+.board-handle:hover {
+    background: var(--accent);
+    color: white;
+}
+
+.board-card.active {
+    border-color: var(--accent);
+    z-index: 1000 !important;
+}
+
+.board-card canvas {
+    flex-grow: 1;
+    width: 100%;
+    height: calc(100% - 30px);
+    touch-action: none;
+    cursor: crosshair;
+}
+/* Кнопка добавления слоя (справа снизу) */
+.add-board-fab {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: rgb(88, 88, 88);
+    font-size: 30px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    z-index: 2000;
+    transition: transform 0.2s, background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.add-board-fab:hover { transform: scale(1.1) rotate(90deg); background: var(--success); }
+
+/* Выбор цвета - стильный кружок */
+#color-wrapper {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid var(--border);
+    cursor: pointer;
+}
+#pen-color {
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    cursor: pointer;
+}
+
+/* Доски: малая анимация появления */
+.board-card {
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.board-card.active {
+    transform: scale(1.02) !important;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
+/* Поле ввода толщины */
+.size-input {
+    width: 60px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 5px;
+    border-radius: 8px;
+    text-align: center;
+}
+/* Контейнер для стопки досок */
+.stack-container {
+    position: relative;
+    height: 65vh;
+    width: 100%;
+    margin-top: 20px;
+    background: var(--bg-input);
+    border-radius: var(--radius);
+    overflow: hidden; /* Чтобы огромные доски не вылезали за края контейнера */
+}
+
+/* Скролл-бокс внутри карточки для больших холстов */
+.canvas-viewport {
+    flex-grow: 1;
+    overflow: auto;
+    background: #333; /* Фон подложки, как в фотошопе */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Сама карточка доски */
+.board-card {
+    position: absolute;
+    width: 95%;
+    height: 90%;
+    top: 40px;
+    left: 2.5%;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), z-index 0.1s;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Анимация "вылета" активной доски */
+.board-card.active {
+    transform: translateY(-20px) scale(1.02) !important;
+    z-index: 1000 !important;
+    border-color: var(--accent);
+}
+
+/* Стилизация выбора цвета */
+#color-wrapper {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid white;
+    box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+#pen-color {
+    padding: 0;
+    border: none;
+    width: 200%;
+    height: 200%;
+    margin: -50%;
+    cursor: pointer;
+}
+
+/* Кнопка добавить слой (FAB) */
+.add-board-fab {
+    position: absolute;
+    bottom: 25px;
+    right: 25px;
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
+    background: var(--accent);
+    color: white;
+    font-size: 28px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    z-index: 2001;
+    transition: all 0.3s;
+}
+.add-board-fab:hover { transform: scale(1.1) rotate(90deg); background: var(--success); }
+
+/* Козырек (Handle) */
+.board-handle {
+    height: 34px;
+    background: var(--bg-input);
+    border-radius: var(--radius) var(--radius) 0 0;
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+canvas {
+    display: block; /* Убирает лишние отступы снизу */
+    max-width: 100%; 
+}
+
+.stack-container {
+    overflow: hidden; /* Запрещает всему контейнеру плодить скроллы */
+    position: relative;
+}
+
+.canvas-viewport {
+    overflow: auto; /* Скролл будет только ТУТ, если доска огромная */
+    height: 100%;
+    width: 100%;
+}
+/* Убираем лишние скроллы и фиксим цвет */
+canvas {
+    display: block; 
+    background-color: var(--bg-card); /* По умолчанию темная, если тема темная */
+}
+
+.canvas-viewport {
+    overflow: auto;
+    height: 100%;
+    width: 100%;
+    background: #2c2c2e; /* Фон "подложки" как в графических редакторах */
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+/* Фикс кликабельности: козырьки теперь всегда торчат лесенкой */
+.board-card {
+    position: absolute;
+    width: 95%;
+    height: 85%;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Каждая следующая доска в DOM будет чуть ниже предыдущей, чтобы козырьки не перекрывались */
+.board-card:nth-child(1) { top: 10px; }
+.board-card:nth-child(2) { top: 50px; }
+.board-card:nth-child(3) { top: 90px; }
+.board-card:nth-child(4) { top: 130px; }
+.board-card:nth-child(n+5) { top: 170px; }
+
+.board-card.active {
+    z-index: 1000 !important;
+    transform: scale(1.01);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+/* Прозрачность и наложение */
+.board-card {
+    position: absolute;
+    width: 90%;
+    height: 80%;
+    left: 5%;
+    background: var(--bg-card); /* Теперь она не обязана быть белой */
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    /* Лесенка для кликов */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Каждая следующая доска чуть ниже, чтобы козырек был виден */
+.board-card:nth-child(1) { top: 20px; z-index: 10; }
+.board-card:nth-child(2) { top: 60px; z-index: 20; }
+.board-card:nth-child(3) { top: 100px; z-index: 30; }
+
+/* Активная доска ВСЕГДА сверху и реагирует на клики */
+.board-card.active {
+    z-index: 1000 !important;
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
+.canvas-viewport canvas {
+    background-color: #ffffff; /* По умолчанию белая, но мы это исправим в JS */
+    cursor: crosshair;
+    display: block;
+}
+
     </style>
 </head>
 <body>
@@ -212,22 +508,48 @@
 
 
     <div id="view-draw" class="section">
-        <h1>Доска и Графики</h1>
+        <h1>Бесконечные доски</h1>
         
-        <div class="tools-row">
-            <input type="color" id="pen-color" value="#000000" style="width:40px; height:40px; padding:0; border:none; border-radius:50%;">
-            <select id="pen-width" style="width:auto; padding:8px;">
-                <option value="2">Тонкая</option>
-                <option value="5" selected>Средняя</option>
-                <option value="10">Толстая</option>
-            </select>
-            <button class="btn-secondary btn-sm" onclick="undoDraw()">↶ Отмена</button>
-            <button class="btn-danger btn-sm" onclick="clearDraw()">Очистить</button>
+        <div class="card" style="padding: 12px; margin-bottom: 10px;">
+            <div class="tools-row" style="flex-wrap: wrap; gap: 10px;">
+                <div class="btn-row" style="background: var(--bg-input); padding: 5px; border-radius: 12px;">
+                    <button class="btn-sm" id="tool-pen" onclick="setTool('pen')" style="background:var(--accent); color:white;">🖌️</button>
+                    <button class="btn-sm" id="tool-eraser" onclick="setTool('eraser')" style="background:transparent;">🧼</button>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn-secondary btn-sm" onclick="undo()" title="Назад">↩️</button>
+                    <button class="btn-secondary btn-sm" onclick="redo()" title="Вперед">↪️</button>
+                </div>
+
+                <div id="color-wrapper"><input type="color" id="pen-color" value="#3B82F6"></div>
+                
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <span style="font-size:12px;">px:</span>
+                    <input type="number" id="pen-width" class="input-inline" value="5" min="1" max="100" style="width:60px;">
+                </div>
+
+                <div style="display:flex; align-items:center; gap:5px; border-left: 1px solid var(--border); padding-left: 10px;">
+                    <span style="font-size:12px;">W:</span>
+                    <input type="number" id="board-w" class="input-inline" value="1500" style="width:70px;">
+                    <span style="font-size:12px;">H:</span>
+                    <input type="number" id="board-h" class="input-inline" value="470" style="width:70px;">
+                </div>
+<div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn-danger btn-sm" onclick="deleteActiveBoard()">− Удалить текущий слой</button>
+        <button class="btn-secondary btn-sm" onclick="renameActiveBoard()">Переименовать</button>
+        <button class="btn-secondary btn-sm" onclick="exportBoards()">Скачать все (.json)</button>
+        <input type="file" id="import-boards-file" accept=".json" style="display:none;" onchange="importBoards(event)">
+        <button class="btn-secondary btn-sm" onclick="document.getElementById('import-boards-file').click()">Загрузить</button>
+    </div>
+                <button class="btn-danger btn-sm" onclick="clearActiveBoard()">Очистить</button>
+            </div>
+        <div class="stack-container" id="stack" style="overflow-y:auto; height:65vh; padding:10px; background:var(--bg-input); border-radius:var(--radius);">
+            <button class="add-board-fab" onclick="createNewBoard()" title="Добавить слой">+</button>
         </div>
 
-        <canvas id="draw-canvas"></canvas>
-
-        <h2>Математика и Графики</h2>
+    <h2 style="margin-top: 30px;">Математика и Графики</h2>
+    </div>
         <div class="card">
             <div style="display:flex; gap:10px;">
                 <input id="math-input" placeholder="Функция: sin(x), x^2, factorial(x) / x" oninput="renderFormulaPreview()">
@@ -476,8 +798,284 @@
     };
 
     Chart.register(zeroXLinePlugin, crosshairPlugin);
+let boards = [];
+let currentTool = 'pen';
+let history = {}; 
+let redoStacks = {};
+// Добавляем в глобальные переменные
+let boardTitles = {};       // { boardId: "Название" }
+let boardArchives = {};     // опционально: можно хранить сохранённые версии
+function scrollToActive() {
+    const active = document.querySelector('.board-card.active');
+    if (active) {
+        active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+// Удаление активной доски
+function deleteActiveBoard() {
+    const active = document.querySelector('.board-card.active');
+    if (!active) return;
+    
+    
+    const id = active.id;
+    active.remove();
+    
+    // Удаляем из массивов
+    boards = boards.filter(b => b.id !== id);
+    delete history[id];
+    delete redoStacks[id];
+    delete boardTitles[id];
+    
+    // Активируем ближайшую доску или создаём новую
+    const remaining = document.querySelector('.board-card');
+    if (remaining) {
+        activateBoard(remaining.id);
+    } else {
+        createNewBoard();
+    }
+    scrollToActive();
+}
 
-    // === PANNING & TRACKING LISTENERS (Request 2 & 3 from previous query) ===
+// Переименование
+function renameActiveBoard() {
+    const active = document.querySelector('.board-card.active');
+    if (!active) return;
+    
+    const id = active.id;
+    const currentTitle = boardTitles[id] || `Слой ${boards.findIndex(b => b.id === id) + 1}`;
+    
+    const newTitle = prompt('Новое название слоя:', currentTitle);
+    if (!newTitle || newTitle.trim() === '') return;
+    
+    boardTitles[id] = newTitle.trim();
+    active.querySelector('.board-title').textContent = newTitle.trim();
+    active.dataset.title = newTitle.trim();
+}
+
+// Экспорт всех досок (очень упрощённый)
+function exportBoards() {
+    const data = boards.map(board => {
+        const id = board.id;
+        return {
+            id: id,
+            title: boardTitles[id] || `Слой ${boards.indexOf(board) + 1}`,
+            width: board.canvas.width,
+            height: board.canvas.height,
+            image: board.canvas.toDataURL('image/png')
+        };
+    });
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `math-boards-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// Импорт досок
+function importBoards(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const imported = JSON.parse(e.target.result);
+            // Очищаем текущие доски (можно сделать опционально)
+            document.getElementById('stack').innerHTML = '';
+            boards = [];
+            history = {};
+            redoStacks = {};
+            boardTitles = {};
+
+            imported.forEach(item => {
+                createNewBoard(item.title);
+                const lastBoard = boards[boards.length-1];
+                const img = new Image();
+                img.onload = () => {
+                    lastBoard.ctx.drawImage(img, 0, 0, item.width, item.height);
+                    saveState(lastBoard.id);
+                };
+                img.src = item.image;
+                
+                // восстанавливаем размеры
+                document.getElementById('board-w').value = item.width;
+                document.getElementById('board-h').value = item.height;
+            });
+            
+            alert(`Импортировано ${imported.length} слоёв`);
+        } catch(err) {
+            alert('Ошибка формата файла: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+function setTool(tool) {
+    currentTool = tool;
+    document.getElementById('tool-pen').style.background = tool === 'pen' ? 'var(--accent)' : 'transparent';
+    document.getElementById('tool-pen').style.color = tool === 'pen' ? 'white' : 'var(--text-primary)';
+    document.getElementById('tool-eraser').style.background = tool === 'eraser' ? 'var(--accent)' : 'transparent';
+    document.getElementById('tool-eraser').style.color = tool === 'eraser' ? 'white' : 'var(--text-primary)';
+}
+
+function onBoardTabOpen() {
+    if (boards.length === 0) createNewBoard();
+}
+
+function createNewBoard(title = '') {
+    const id = 'board_' + Date.now();
+    const stack = document.getElementById('stack');
+    if (!stack) return;
+
+    const w = parseInt(document.getElementById('board-w')?.value) || 1500;
+    const h = parseInt(document.getElementById('board-h')?.value) || 800;
+
+    const displayTitle = title || `Слой ${boards.length + 1}`;
+
+    const card = document.createElement('div');
+    card.className = 'board-card';
+    card.id = id;
+    card.dataset.title = displayTitle;
+
+    card.innerHTML = `
+        <div class="board-handle" onclick="activateBoard('${id}')">
+            <span class="board-title">${displayTitle}</span>
+            <span style="margin-left:auto; color:var(--text-secondary); font-size:11px;">${w}×${h}</span>
+        </div>
+        <div class="canvas-viewport">
+            <canvas id="canvas_${id}" width="${w}" height="${h}" style="background:var(--bg-card);"></canvas>
+        </div>
+    `;
+
+    stack.appendChild(card);
+    const canvas = card.querySelector('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const boardObj = { id, canvas, ctx };
+    boards.push(boardObj);
+    history[id] = [];
+    boardTitles[id] = displayTitle;
+
+    initCanvasLogic(boardObj);
+    activateBoard(id);
+    saveState(id);
+    activateBoard(id);
+    scrollToActive();
+}
+function initCanvasLogic(board) {
+    let drawing = false;
+    const ctx = board.ctx;
+
+    const getPos = (e) => {
+        const rect = board.canvas.getBoundingClientRect();
+        // Учитываем реальное разрешение канваса и его размер на экране
+        const scaleX = board.canvas.width / rect.width;
+        const scaleY = board.canvas.height / rect.height;
+        return {
+            x: ((e.clientX || (e.touches && e.touches[0].clientX)) - rect.left) * scaleX,
+            y: ((e.clientY || (e.touches && e.touches[0].clientY)) - rect.top) * scaleY
+        };
+    };
+
+    board.canvas.addEventListener('pointerdown', (e) => {
+        drawing = true;
+        ctx.beginPath();
+        const p = getPos(e);
+        ctx.moveTo(p.x, p.y);
+    });
+
+    board.canvas.addEventListener('pointermove', (e) => {
+        if (!drawing) return;
+        const p = getPos(e);
+        
+        ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
+        ctx.strokeStyle = document.getElementById('pen-color').value;
+        ctx.lineWidth = document.getElementById('pen-width').value;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+    });
+
+    const stopDrawing = () => {
+        if (drawing) {
+            drawing = false;
+            saveState(board.id);
+        }
+    };
+
+    board.canvas.addEventListener('pointerup', stopDrawing);
+    board.canvas.addEventListener('pointerleave', stopDrawing);
+}
+
+function saveState(id) {
+    const canvas = document.getElementById('canvas_' + id);
+    if (!canvas) return;
+    if (history[id].length > 25) history[id].shift();
+    history[id].push(canvas.toDataURL());
+    redoStacks[id] = []; 
+}
+
+function undo() {
+    const active = boards.find(b => document.getElementById(b.id).classList.contains('active'));
+    if (active && history[active.id].length > 1) {
+        redoStacks[active.id].push(history[active.id].pop());
+        const img = new Image();
+        img.onload = () => {
+            active.ctx.clearRect(0, 0, active.canvas.width, active.canvas.height);
+            active.ctx.drawImage(img, 0, 0);
+        };
+        img.src = history[active.id][history[active.id].length - 1];
+    }
+}
+
+function redo() {
+    const active = boards.find(b => document.getElementById(b.id).classList.contains('active'));
+    if (active && redoStacks[active.id].length > 0) {
+        const state = redoStacks[active.id].pop();
+        history[active.id].push(state);
+        const img = new Image();
+        img.onload = () => {
+            active.ctx.clearRect(0, 0, active.canvas.width, active.canvas.height);
+            active.ctx.drawImage(img, 0, 0);
+        };
+        img.src = state;
+    }
+}
+
+function activateBoard(id) {
+    document.querySelectorAll('.board-card').forEach(c => {
+        c.classList.remove('active');
+        c.style.opacity = '0.75';
+    });
+    
+    const el = document.getElementById(id);
+    if (el) {
+        el.classList.add('active');
+        el.style.opacity = '1';
+        stack.appendChild(el); // перемещаем наверх стопки
+        el.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+    }
+    scrollToActive();
+}
+// Функция смены цвета фона для АКТИВНОЙ доски
+function updateBoardBackground(color) {
+    const activeCanvas = document.querySelector('.board-card.active canvas');
+    if (activeCanvas) {
+        activeCanvas.style.backgroundColor = color;
+    }
+}
+function clearActiveBoard() {
+    const activeCard = document.querySelector('.board-card.active canvas');
+    if(activeCard) {
+        const ctx = activeCard.getContext('2d');
+        ctx.clearRect(0, 0, activeCard.width, activeCard.height);
+        saveState(activeCard.id.replace('canvas_', ''));
+    }
+}
 
     graphContainer.addEventListener('mousedown', (e) => {
         // Check for Middle Mouse Button (button === 1)
@@ -593,27 +1191,27 @@
     }
 
     function nav(id, el) {
+        // Скрываем всё
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        el.classList.add('active');
-        if(id === 'view-draw') resizeCanvas();
-        if(id === 'view-memory') updateMemStats();
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        
+        // Показываем нужное
+        const target = document.getElementById(id);
+        if (target) {
+            target.classList.add('active');
+            el.classList.add('active');
+        }
+
+        // Если зашли в доски — инициализируем стек, если он пуст
+        if (id === 'view-draw') {
+            if (typeof onBoardTabOpen === 'function') {
+                onBoardTabOpen();
+            }
+        }
     }
     
     // Drawing Placeholder
-    const cvs = document.getElementById('draw-canvas');
-    const ctx = cvs.getContext('2d');
     let isDrawing = false, paths = [], redoStack = [];
-    function resizeCanvas() {
-        const rect = cvs.getBoundingClientRect();
-        cvs.width = rect.width; cvs.height = 350;
-        redraw();
-    }
-    window.addEventListener('resize', resizeCanvas);
-    cvs.addEventListener('pointerdown', e => { isDrawing = true; redoStack = []; const rect = cvs.getBoundingClientRect(); paths.push([{ x: e.clientX - rect.left, y: e.clientY - rect.top, c: document.getElementById('pen-color').value, w: document.getElementById('pen-width').value }]); });
-    cvs.addEventListener('pointermove', e => { if(!isDrawing) return; const rect = cvs.getBoundingClientRect(); const pts = paths[paths.length-1]; pts.push({ x: e.clientX - rect.left, y: e.clientY - rect.top }); ctx.beginPath(); ctx.strokeStyle = pts[0].c; ctx.lineWidth = pts[0].w; ctx.lineCap = 'round'; ctx.moveTo(pts[pts.length-2].x, pts[pts.length-2].y); ctx.lineTo(pts[pts.length-1].x, pts[pts.length-1].y); ctx.stroke(); });
-    cvs.addEventListener('pointerup', () => isDrawing = false);
     function redraw() { ctx.clearRect(0,0,cvs.width,cvs.height); paths.forEach(p => { if(p.length < 2) return; ctx.beginPath(); ctx.strokeStyle = p[0].c; ctx.lineWidth = p[0].w; ctx.lineCap = 'round'; ctx.moveTo(p[0].x, p[0].y); for(let i=1; i<p.length; i++) ctx.lineTo(p[i].x, p[i].y); ctx.stroke(); }); }
     function undoDraw() { if(paths.length){ redoStack.push(paths.pop()); redraw(); } }
     function clearDraw() { paths = []; redraw(); }
